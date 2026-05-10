@@ -36,8 +36,8 @@ const discDescriptions = {
 };
 
 // --- 初始化系統狀態 ---
-let questions = JSON.parse(localStorage.getItem('moxadisc_questions')) || defaultQuestions;
-let settings = JSON.parse(localStorage.getItem('moxadisc_settings')) || defaultSettings;
+let questions = [...defaultQuestions];
+let settings = {...defaultSettings};
 
 let currentQuestionIndex = 0;
 let userAnswers = new Array(questions.length).fill(null);
@@ -60,6 +60,43 @@ const progressFill = document.getElementById('progress-fill');
 const progressText = document.getElementById('progress-text');
 
 let radarChartInstance = null;
+
+// --- 雲端配置載入 ---
+async function initCloudConfig() {
+    try {
+        const configDoc = await db.collection('moxadisc_config').doc('general').get();
+        if (configDoc.exists) {
+            const data = configDoc.data();
+            if (data.settings) settings = data.settings;
+            if (data.questions) questions = data.questions;
+            userAnswers = new Array(questions.length).fill(null);
+        }
+    } catch (e) {
+        console.warn("無法載入雲端設定，使用預設值:", e);
+    }
+    applyConfigUI();
+}
+
+function applyConfigUI() {
+    document.getElementById('site-title').innerText = settings.title;
+    document.title = settings.title;
+
+    const instructionsContainer = document.getElementById('site-instructions');
+    instructionsContainer.innerHTML = '';
+    settings.instructions.forEach(inst => {
+        if (inst.trim() !== '') {
+            const li = document.createElement('li');
+            li.innerText = inst;
+            instructionsContainer.appendChild(li);
+        }
+    });
+
+    if (settings.instructions.length === 0 || (settings.instructions.length === 1 && settings.instructions[0].trim() === '')) {
+        document.querySelector('.instructions').style.display = 'none';
+    } else {
+        document.querySelector('.instructions').style.display = 'block';
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     // 主題切換邏輯
@@ -97,23 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 根據設定套用 UI
-    document.getElementById('site-title').innerText = settings.title;
-    document.title = settings.title;
-
-    const instructionsContainer = document.getElementById('site-instructions');
-    instructionsContainer.innerHTML = '';
-    settings.instructions.forEach(inst => {
-        if (inst.trim() !== '') {
-            const li = document.createElement('li');
-            li.innerText = inst;
-            instructionsContainer.appendChild(li);
-        }
-    });
-
-    if (settings.instructions.length === 0 || (settings.instructions.length === 1 && settings.instructions[0].trim() === '')) {
-        document.querySelector('.instructions').style.display = 'none';
-    }
+    // 初始化雲端配置
+    initCloudConfig();
 });
 
 // 開始測評
@@ -199,7 +221,7 @@ submitBtn.addEventListener('click', () => {
     calculateResults();
 });
 
-function calculateResults() {
+async function calculateResults() {
     const scores = { D: 0, I: 0, S: 0, C: 0 };
     userAnswers.forEach(ans => {
         if (ans) scores[ans]++;
@@ -220,18 +242,16 @@ function calculateResults() {
     let hasSecondary = false;
 
     // 判斷輔型邏輯：
-    // 1. 如果次高分 <= 3，沒有輔型
-    // 2. 如果次高分 == 第三高分 (有兩個或以上的型態數量相同)，沒有輔型
     if (secondaryScore > 3 && secondaryScore > thirdScore) {
-        // 大小寫處理，通常 I 會轉成小寫 i
         let pStr = primaryType === 'I' ? 'i' : primaryType;
         let sStr = secondaryType === 'I' ? 'i' : secondaryType;
-        resultType = pStr + sStr; // 例如 Di, IS, CS
+        resultType = pStr + sStr; 
         hasSecondary = true;
     } else {
         resultType = primaryType === 'I' ? 'i' : primaryType;
     }
 
+    // 儲存至雲端資料庫
     saveToDatabase(userName, scores, resultType);
 
     document.getElementById('result-name').innerText = userName;
@@ -315,17 +335,21 @@ function calculateResults() {
     resultScreen.classList.add('active');
 }
 
-function saveToDatabase(name, scores, mainType) {
+async function saveToDatabase(name, scores, mainType) {
     const record = {
-        id: Date.now().toString(),
         date: new Date().toLocaleString(),
         name: name,
         scores: scores,
-        mainType: mainType
+        mainType: mainType,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
     };
-    let db = JSON.parse(localStorage.getItem('disc_responses')) || [];
-    db.push(record);
-    localStorage.setItem('disc_responses', JSON.stringify(db));
+    
+    try {
+        await db.collection('disc_responses').add(record);
+        console.log("資料成功同步至雲端");
+    } catch (e) {
+        console.error("雲端同步失敗:", e);
+    }
 }
 
 document.getElementById('restart-btn').addEventListener('click', () => {
