@@ -307,13 +307,11 @@ document.addEventListener('DOMContentLoaded', () => {
         tableResponsive.style.display = 'block';
         if (chartContainer) chartContainer.style.display = 'block';
 
-        let totalD = 0, totalI = 0, totalS = 0, totalC = 0;
+        let typeCounts = {};
 
         currentResponses.forEach(record => {
-            totalD += parseInt(record.scores.D || 0);
-            totalI += parseInt(record.scores.I || 0);
-            totalS += parseInt(record.scores.S || 0);
-            totalC += parseInt(record.scores.C || 0);
+            let type = record.mainType;
+            typeCounts[type] = (typeCounts[type] || 0) + 1;
             
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -331,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tbody.appendChild(tr);
         });
 
-        drawChart(totalD / currentResponses.length, totalI / currentResponses.length, totalS / currentResponses.length, totalC / currentResponses.length);
+        drawChart(typeCounts);
 
         // 綁定刪除按鈕
         document.querySelectorAll('.delete-record-btn').forEach(btn => {
@@ -344,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function drawChart(avgD, avgI, avgS, avgC) {
+    function drawChart(typeCounts) {
         const ctx = document.getElementById('averageScoresChart');
         if (!ctx) return;
         
@@ -356,15 +354,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const textColor = isDark ? '#f8fafc' : '#1e293b';
         const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
 
+        const labels = Object.keys(typeCounts).map(type => `${type} 型`);
+        const data = Object.values(typeCounts);
+
         resultChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['D (支配型)', 'i (影響型)', 'S (穩健型)', 'C (嚴謹型)'],
+                labels: labels,
                 datasets: [{
-                    label: '全體平均分數',
-                    data: [avgD.toFixed(1), avgI.toFixed(1), avgS.toFixed(1), avgC.toFixed(1)],
-                    backgroundColor: ['rgba(239, 68, 68, 0.7)', 'rgba(234, 179, 8, 0.7)', 'rgba(34, 197, 94, 0.7)', 'rgba(59, 130, 246, 0.7)'],
-                    borderColor: ['rgb(239, 68, 68)', 'rgb(234, 179, 8)', 'rgb(34, 197, 94)', 'rgb(59, 130, 246)'],
+                    label: '人數',
+                    data: data,
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                    borderColor: 'rgb(59, 130, 246)',
                     borderWidth: 1
                 }]
             },
@@ -372,11 +373,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 responsive: true,
                 scales: {
                     x: { ticks: { color: textColor }, grid: { color: gridColor } },
-                    y: { beginAtZero: true, max: 15, ticks: { color: textColor }, grid: { color: gridColor } }
+                    y: { beginAtZero: true, ticks: { stepSize: 1, color: textColor }, grid: { color: gridColor } }
                 },
                 plugins: {
-                    legend: { labels: { color: textColor } },
-                    title: { display: true, text: '所有受測者平均風格分數落差', font: { size: 16 }, color: textColor }
+                    legend: { display: false },
+                    title: { display: true, text: '所有受測者判定結果統計 (人數)', font: { size: 16 }, color: textColor }
                 }
             }
         });

@@ -123,12 +123,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if(radarChartInstance) {
                 const textColor = newTheme === 'dark' ? '#f8fafc' : '#1e293b';
                 const gridColor = newTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-                const bgColor = newTheme === 'dark' ? '#1e293b' : '#ffffff';
-                radarChartInstance.options.scales.r.pointLabels.color = textColor;
-                radarChartInstance.options.scales.r.grid.color = gridColor;
-                radarChartInstance.options.scales.r.angleLines.color = gridColor;
-                radarChartInstance.options.scales.r.ticks.backdropColor = bgColor;
-                radarChartInstance.options.scales.r.ticks.color = textColor;
+                
+                if (radarChartInstance.options.scales.x) {
+                    radarChartInstance.options.scales.x.ticks.color = textColor;
+                    radarChartInstance.options.scales.x.grid.color = gridColor;
+                }
+                if (radarChartInstance.options.scales.y) {
+                    radarChartInstance.options.scales.y.ticks.color = textColor;
+                    radarChartInstance.options.scales.y.grid.color = gridColor;
+                }
                 radarChartInstance.update();
             }
         });
@@ -286,41 +289,43 @@ async function calculateResults() {
         const bgColor = isDark ? '#1e293b' : '#ffffff';
 
         radarChartInstance = new Chart(ctx, {
-            type: 'radar',
+            type: 'bar',
             data: {
                 labels: [`D (支配): ${scores.D}`, `i (影響): ${scores.I}`, `S (穩健): ${scores.S}`, `C (嚴謹): ${scores.C}`],
                 datasets: [{
                     label: '風格分數',
                     data: [scores.D, scores.I, scores.S, scores.C],
-                    backgroundColor: 'rgba(59, 130, 246, 0.3)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    pointBackgroundColor: 'rgba(59, 130, 246, 1)',
-                    pointBorderColor: '#fff',
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 2,
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.7)', 
+                        'rgba(234, 179, 8, 0.7)', 
+                        'rgba(34, 197, 94, 0.7)', 
+                        'rgba(59, 130, 246, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgb(239, 68, 68)', 
+                        'rgb(234, 179, 8)', 
+                        'rgb(34, 197, 94)', 
+                        'rgb(59, 130, 246)'
+                    ],
+                    borderWidth: 1,
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    r: {
+                    x: {
+                        ticks: { color: textColor },
+                        grid: { color: gridColor }
+                    },
+                    y: {
                         beginAtZero: true,
                         max: questions.length, 
-                        min: 0,
                         ticks: {
-                            display: false,
                             stepSize: 3,
-                            backdropColor: bgColor,
                             color: textColor
                         },
-                        pointLabels: {
-                            font: { size: 16, family: "'Inter', sans-serif" },
-                            color: textColor
-                        },
-                        grid: { color: gridColor },
-                        angleLines: { color: gridColor }
+                        grid: { color: gridColor }
                     }
                 },
                 plugins: {
@@ -353,10 +358,4 @@ async function saveToDatabase(name, scores, mainType) {
     }
 }
 
-document.getElementById('restart-btn').addEventListener('click', () => {
-    currentQuestionIndex = 0;
-    userAnswers.fill(null);
-    nameInput.value = '';
-    resultScreen.classList.remove('active');
-    welcomeScreen.classList.add('active');
-});
+
