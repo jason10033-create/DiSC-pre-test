@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resultChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['D (支配型)', 'i (影響型)', 'S (穩健型)', 'C (分析型)'],
+                labels: ['D (支配型)', 'i (影響型)', 'S (穩健型)', 'C (嚴謹型)'],
                 datasets: [{
                     label: '全體平均分數',
                     data: [avgD.toFixed(1), avgI.toFixed(1), avgS.toFixed(1), avgC.toFixed(1)],

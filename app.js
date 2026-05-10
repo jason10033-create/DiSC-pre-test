@@ -32,7 +32,7 @@ const discDescriptions = {
     "D": "支配型 (Dominance)：您注重結果、果斷且具競爭力。喜歡接受挑戰，追求效率與目標達成。",
     "I": "影響型 (Influence)：您熱情、擅長溝通且具說服力。重視人際互動，能帶動團隊氣氛。",
     "S": "穩健型 (Steadiness)：您可靠、隨和且是好的傾聽者。重視團隊和諧，行事按部就班。",
-    "C": "遵從型 (Conscientiousness)：您謹慎、精確且注重邏輯。重視品質與準確性，決策基於事實與數據。"
+    "C": "嚴謹型 (Conscientiousness)：您謹慎、精確且注重邏輯。重視品質與準確性，決策基於事實與數據。"
 };
 
 // --- 初始化系統狀態 ---
@@ -288,7 +288,7 @@ async function calculateResults() {
         radarChartInstance = new Chart(ctx, {
             type: 'radar',
             data: {
-                labels: ['D (支配)', 'i (影響)', 'S (穩健)', 'C (服從)'],
+                labels: [`D (支配): ${scores.D}`, `i (影響): ${scores.I}`, `S (穩健): ${scores.S}`, `C (嚴謹): ${scores.C}`],
                 datasets: [{
                     label: '風格分數',
                     data: [scores.D, scores.I, scores.S, scores.C],
@@ -310,12 +310,13 @@ async function calculateResults() {
                         max: questions.length, 
                         min: 0,
                         ticks: {
+                            display: false,
                             stepSize: 3,
                             backdropColor: bgColor,
                             color: textColor
                         },
                         pointLabels: {
-                            font: { size: 14, family: "'Inter', sans-serif" },
+                            font: { size: 16, family: "'Inter', sans-serif" },
                             color: textColor
                         },
                         grid: { color: gridColor },

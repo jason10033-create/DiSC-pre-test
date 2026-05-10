@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
-        const savedTheme = localStorage.getItem('moxadisc_theme') || 'light';
+        const savedTheme = localStorage.getItem('moxadisc_theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
     </script>
 </head>
@@ -66,7 +66,7 @@
                     <p id="disc-result-desc" class="result-description"></p>
                 </div>
 
-                <div id="chart-container" class="disc-chart-container" style="display: none; position: relative; width: 100%; max-width: 400px; margin: 0 auto 30px;">
+                <div id="chart-container" style="display: none; width: 100%; max-width: 500px; margin: 20px auto; height: 400px;">
                     <canvas id="resultRadarChart"></canvas>
                 </div>
 
