@@ -86,11 +86,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 基本設定邏輯 ---
     async function loadSettings() {
-        const configDoc = await db.collection('moxadisc_config').doc('general').get();
         let settings = { randomizeOptions: true, showDetailedResults: true };
-        
-        if (configDoc.exists) {
-            settings = configDoc.data().settings || settings;
+        try {
+            const configDoc = await db.collection('moxadisc_config').doc('general').get();
+            if (configDoc.exists) {
+                settings = configDoc.data().settings || settings;
+            }
+        } catch (error) {
+            console.error("讀取雲端設定失敗，使用預設值:", error);
         }
         
         document.getElementById('setting-randomize').checked = settings.randomizeOptions;
@@ -114,14 +117,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 內容編輯邏輯 ---
     async function loadContentEditor() {
-        const configDoc = await db.collection('moxadisc_config').doc('general').get();
-        let settings = { title: "-DiSC人際風格課前測評-", instructions: ["請以最「自然」的直覺反應作答，沒有對錯。", "", ""] };
-        let questions = [];
+        let settings = {
+            title: "-DiSC人際風格課前測評-",
+            instructions: [
+                "請以最「自然」的直覺反應作答，沒有對錯。",
+                "請排除目前工作上的壓力或期望，以平常心的狀態填寫。",
+                "測評約需 5 分鐘，請在不受打擾的環境下完成。"
+            ]
+        };
+        const defaultQuestions = [
+            { text: "1. 你覺得自己是一位？", options: [{ text: "積極、有行動力的人", type: "D" }, { text: "開朗、活潑健談的人", type: "I" }, { text: "隨和、容易相處的人", type: "S" }, { text: "認真、專注細節的人", type: "C" }] },
+            { text: "2. 以下哪一個可能是別人稱讚你的優點？", options: [{ text: "果斷", type: "D" }, { text: "樂觀", type: "I" }, { text: "體貼", type: "S" }, { text: "謹慎", type: "C" }] },
+            { text: "3. 以下哪一個可能是你的小缺點？", options: [{ text: "沒耐性", type: "D" }, { text: "粗心", type: "I" }, { text: "沒主見", type: "S" }, { text: "冷淡", type: "C" }] },
+            { text: "4. 在工作環境中，你最重視？", options: [{ text: "效率和結果", type: "D" }, { text: "團隊合作和人際關係", type: "I" }, { text: "穩定性與成員和諧", type: "S" }, { text: "準確性和品質", type: "C" }] },
+            { text: "5. 和他人一起完成一件事情時，你優先在意的是？", options: [{ text: "是否有達到目標", type: "D" }, { text: "與成員的互動是否有趣愉快", type: "I" }, { text: "成員間的關係是否融洽", type: "S" }, { text: "流程與方法是否合理", type: "C" }] },
+            { text: "6. 與他人一起執行任務時，甚麼情況容易讓你擔心？", options: [{ text: "失去掌控，無能為力", type: "D" }, { text: "被人排擠，不受肯定", type: "I" }, { text: "變動過度，無所適從", type: "S" }, { text: "標準不一，制度不清", type: "C" }] },
+            { text: "7. 在一個團隊會議中，你比較常會？", options: [{ text: "主動提出解決方案並推動執行", type: "D" }, { text: "積極加入討論並鼓勵他人發言", type: "I" }, { text: "仔細聆聽並支持團隊決議", type: "S" }, { text: "認真分析各種方案的優缺點", type: "C" }] },
+            { text: "8. 你個人的溝通風格比較像是：", options: [{ text: "直接、簡潔、重點明確", type: "D" }, { text: "熱情、生動、富有表現力", type: "I" }, { text: "溫和、耐心、善於傾聽", type: "S" }, { text: "精確、詳細、邏輯清晰", type: "C" }] },
+            { text: "9. 別人與你溝通時，你比較期待？", options: [{ text: "直接切入主題，不拐彎抹角", type: "D" }, { text: "輕鬆愉快，不要太嚴肅", type: "I" }, { text: "不要一次講太多細節", type: "S" }, { text: "條列式說明，清楚解釋原因", type: "C" }] },
+            { text: "10. 當需要說服他人時，你傾向於？", options: [{ text: "直接說明利益和必要性", type: "D" }, { text: "描繪成功景象影響他人", type: "I" }, { text: "耐心解釋並尋求共識", type: "S" }, { text: "提供詳細的事實和數據", type: "C" }] },
+            { text: "11. 面對新的挑戰時，你的第一反應是？", options: [{ text: "立即採取行動解決問題", type: "D" }, { text: "找他人討論並尋求支持", type: "I" }, { text: "謹慎評估風險後再行動", type: "S" }, { text: "蒐集資料並制定詳細計畫", type: "C" }] },
+            { text: "12. 面對衝突時，你通常會？", options: [{ text: "直接面對，快速解決", type: "D" }, { text: "嘗試緩解氣氛，尋求妥協", type: "I" }, { text: "避免當面衝突，私下溝通", type: "S" }, { text: "客觀分析衝突的問題", type: "C" }] },
+            { text: "13. 面對變化時，你的態度是？", options: [{ text: "迅速調整以回應變化", type: "D" }, { text: "對新鮮感感到興奮", type: "I" }, { text: "需要時間適應變化", type: "S" }, { text: "希望瞭解變化的原因", type: "C" }] },
+            { text: "14. 需要做決定時，你比較偏向？", options: [{ text: "能更有效率得到結果的方法", type: "D" }, { text: "跟他人討論過的方法", type: "I" }, { text: "多一點時間考慮或詢問經驗", type: "S" }, { text: "需要詳細資料做為依據", type: "C" }] },
+            { text: "15. 在壓力下工作時，你會？", options: [{ text: "更加專注於目標達成", type: "D" }, { text: "尋求他人的協助和支持", type: "I" }, { text: "保持冷靜並按部按部就班", type: "S" }, { text: "更仔細地檢查每個細節", type: "C" }] }
+        ];
+        let questions = [...defaultQuestions];
 
-        if (configDoc.exists) {
-            const data = configDoc.data();
-            if (data.settings) settings = data.settings;
-            if (data.questions) questions = data.questions;
+        try {
+            const configDoc = await db.collection('moxadisc_config').doc('general').get();
+            if (configDoc.exists) {
+                const data = configDoc.data();
+                if (data.settings) settings = data.settings;
+                if (data.questions && data.questions.length > 0) questions = data.questions;
+            }
+        } catch (error) {
+            console.error("讀取雲端內容失敗，使用預設值:", error);
         }
 
         document.getElementById('edit-title').value = settings.title || '';
@@ -193,6 +224,50 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('題目與設定已同步至雲端！');
         } catch (e) {
             alert('儲存失敗: ' + e.message);
+        }
+    });
+
+    document.getElementById('reset-content-btn').addEventListener('click', async () => {
+        if(confirm('確定要將所有題目與首頁提醒還原為原廠預設值嗎？這會覆蓋目前的雲端設定！')) {
+            const defaultSettings = {
+                title: "-DiSC人際風格課前測評-",
+                instructions: [
+                    "請以最「自然」的直覺反應作答，沒有對錯。",
+                    "請排除目前工作上的壓力或期望，以平常心的狀態填寫。",
+                    "測評約需 5 分鐘，請在不受打擾的環境下完成。"
+                ],
+                randomizeOptions: document.getElementById('setting-randomize').checked,
+                showDetailedResults: document.getElementById('setting-show-chart').checked
+            };
+            
+            const defaultQuestions = [
+                { text: "1. 你覺得自己是一位？", options: [{ text: "積極、有行動力的人", type: "D" }, { text: "開朗、活潑健談的人", type: "I" }, { text: "隨和、容易相處的人", type: "S" }, { text: "認真、專注細節的人", type: "C" }] },
+                { text: "2. 以下哪一個可能是別人稱讚你的優點？", options: [{ text: "果斷", type: "D" }, { text: "樂觀", type: "I" }, { text: "體貼", type: "S" }, { text: "謹慎", type: "C" }] },
+                { text: "3. 以下哪一個可能是你的小缺點？", options: [{ text: "沒耐性", type: "D" }, { text: "粗心", type: "I" }, { text: "沒主見", type: "S" }, { text: "冷淡", type: "C" }] },
+                { text: "4. 在工作環境中，你最重視？", options: [{ text: "效率和結果", type: "D" }, { text: "團隊合作和人際關係", type: "I" }, { text: "穩定性與成員和諧", type: "S" }, { text: "準確性和品質", type: "C" }] },
+                { text: "5. 和他人一起完成一件事情時，你優先在意的是？", options: [{ text: "是否有達到目標", type: "D" }, { text: "與成員的互動是否有趣愉快", type: "I" }, { text: "成員間的關係是否融洽", type: "S" }, { text: "流程與方法是否合理", type: "C" }] },
+                { text: "6. 與他人一起執行任務時，甚麼情況容易讓你擔心？", options: [{ text: "失去掌控，無能為力", type: "D" }, { text: "被人排擠，不受肯定", type: "I" }, { text: "變動過度，無所適從", type: "S" }, { text: "標準不一，制度不清", type: "C" }] },
+                { text: "7. 在一個團隊會議中，你比較常會？", options: [{ text: "主動提出解決方案並推動執行", type: "D" }, { text: "積極加入討論並鼓勵他人發言", type: "I" }, { text: "仔細聆聽並支持團隊決議", type: "S" }, { text: "認真分析各種方案的優缺點", type: "C" }] },
+                { text: "8. 你個人的溝通風格比較像是：", options: [{ text: "直接、簡潔、重點明確", type: "D" }, { text: "熱情、生動、富有表現力", type: "I" }, { text: "溫和、耐心、善於傾聽", type: "S" }, { text: "精確、詳細、邏輯清晰", type: "C" }] },
+                { text: "9. 別人與你溝通時，你比較期待？", options: [{ text: "直接切入主題，不拐彎抹角", type: "D" }, { text: "輕鬆愉快，不要太嚴肅", type: "I" }, { text: "不要一次講太多細節", type: "S" }, { text: "條列式說明，清楚解釋原因", type: "C" }] },
+                { text: "10. 當需要說服他人時，你傾向於？", options: [{ text: "直接說明利益和必要性", type: "D" }, { text: "描繪成功景象影響他人", type: "I" }, { text: "耐心解釋並尋求共識", type: "S" }, { text: "提供詳細的事實和數據", type: "C" }] },
+                { text: "11. 面對新的挑戰時，你的第一反應是？", options: [{ text: "立即採取行動解決問題", type: "D" }, { text: "找他人討論並尋求支持", type: "I" }, { text: "謹慎評估風險後再行動", type: "S" }, { text: "蒐集資料並制定詳細計畫", type: "C" }] },
+                { text: "12. 面對衝突時，你通常會？", options: [{ text: "直接面對，快速解決", type: "D" }, { text: "嘗試緩解氣氛，尋求妥協", type: "I" }, { text: "避免當面衝突，私下溝通", type: "S" }, { text: "客觀分析衝突的問題", type: "C" }] },
+                { text: "13. 面對變化時，你的態度是？", options: [{ text: "迅速調整以回應變化", type: "D" }, { text: "對新鮮感感到興奮", type: "I" }, { text: "需要時間適應變化", type: "S" }, { text: "希望瞭解變化的原因", type: "C" }] },
+                { text: "14. 需要做決定時，你比較偏向？", options: [{ text: "能更有效率得到結果的方法", type: "D" }, { text: "跟他人討論過的方法", type: "I" }, { text: "多一點時間考慮或詢問經驗", type: "S" }, { text: "需要詳細資料做為依據", type: "C" }] },
+                { text: "15. 在壓力下工作時，你會？", options: [{ text: "更加專注於目標達成", type: "D" }, { text: "尋求他人的協助和支持", type: "I" }, { text: "保持冷靜並按部按部就班", type: "S" }, { text: "更仔細地檢查每個細節", type: "C" }] }
+            ];
+
+            try {
+                await db.collection('moxadisc_config').doc('general').set({
+                    settings: defaultSettings,
+                    questions: defaultQuestions
+                });
+                alert('已成功還原為原廠預設值！');
+                loadContentEditor(); // 重新整理畫面
+            } catch (e) {
+                alert('還原失敗: ' + e.message);
+            }
         }
     });
 
