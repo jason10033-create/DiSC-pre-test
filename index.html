@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>-DiSC人際風格課前測評-</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        const savedTheme = localStorage.getItem('moxadisc_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+</head>
+<body>
+    <button id="theme-toggle" class="theme-toggle" aria-label="切換深淺色模式">
+        <span id="theme-icon">🌙</span>
+    </button>
+    <div class="app-container">
+        <!-- 歡迎頁面 -->
+        <div id="welcome-screen" class="screen active">
+            <div class="card">
+                <h1 id="site-title">-DiSC人際風格課前測評-</h1>
+                <div class="instructions">
+                    <p><strong>⚠️ 注意事項：</strong></p>
+                    <ul id="site-instructions">
+                        <!-- 由 JS 載入 -->
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <label for="userName">請輸入您的姓名：</label>
+                    <input type="text" id="userName" placeholder="例如: Jason Kuo" required>
+                </div>
+                <button id="start-btn" class="btn primary-btn">開始測評</button>
+            </div>
+            <a href="admin.html" class="admin-link">管理員登入</a>
+        </div>
+
+        <!-- 測驗頁面 -->
+        <div id="quiz-screen" class="screen">
+            <div class="card">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div id="progress-fill"></div>
+                    </div>
+                    <div id="progress-text">1 / 15</div>
+                </div>
+                <h2 id="question-text">載入題目中...</h2>
+                <div id="options-container" class="options">
+                </div>
+                <div class="navigation-buttons">
+                    <button id="prev-btn" class="btn secondary-btn" disabled>上一題</button>
+                    <button id="next-btn" class="btn primary-btn" disabled>下一題</button>
+                    <button id="submit-btn" class="btn success-btn" style="display: none;">完成測評</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結果頁面 -->
+        <div id="result-screen" class="screen">
+            <div class="card">
+                <h2>測評完成！</h2>
+                <p class="thank-you-message">感謝您，<span id="result-name"></span>！您已完成測評。</p>
+                
+                <div class="result-summary">
+                    <h3>您的主要風格可能為：<span id="disc-result-type" class="highlight"></span></h3>
+                    <p id="disc-result-desc" class="result-description"></p>
+                </div>
+
+                <div id="chart-container" class="disc-chart-container" style="display: none; position: relative; width: 100%; max-width: 400px; margin: 0 auto 30px;">
+                    <canvas id="resultRadarChart"></canvas>
+                </div>
+
+                <button id="restart-btn" class="btn secondary-btn">重新測評</button>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

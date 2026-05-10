@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理員後台 - DiSC 測評</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        const savedTheme = localStorage.getItem('moxadisc_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+</head>
+<body class="admin-body">
+    <button id="theme-toggle" class="theme-toggle" aria-label="切換深淺色模式">
+        <span id="theme-icon">🌙</span>
+    </button>
+    
+    <!-- 登入畫面 -->
+    <div id="admin-login-screen" class="app-container active">
+        <div class="card">
+            <h2>管理員登入</h2>
+            <div class="form-group" style="margin-top: 20px;">
+                <label for="admin-pwd">請輸入管理員密碼：</label>
+                <input type="password" id="admin-pwd" placeholder="Password">
+            </div>
+            <button id="login-btn" class="btn primary-btn">登入</button>
+            <a href="index.html" class="admin-link">返回前台</a>
+        </div>
+    </div>
+
+    <!-- 管理員後台主畫面 -->
+    <div id="admin-dashboard" class="admin-container" style="display: none;">
+        <header class="admin-header">
+            <h1>DiSC 測評資料後台</h1>
+            <a href="index.html" class="btn secondary-btn small">返回前台</a>
+        </header>
+
+        <!-- 導覽列 -->
+        <div class="tabs">
+            <button class="tab-btn active" data-target="tab-settings">基本設定</button>
+            <button class="tab-btn" data-target="tab-content">內容編輯</button>
+            <button class="tab-btn" data-target="tab-results">測評結果</button>
+        </div>
+        
+        <div class="admin-card">
+            
+            <!-- 基本設定 Tab -->
+            <div id="tab-settings" class="tab-content active">
+                <h3>基本設定 (General Settings)</h3>
+                <p style="color:var(--text-muted); margin-bottom: 20px;">控制前台的顯示與互動邏輯。</p>
+                
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="setting-randomize"> 
+                        隨機打亂每題的選項順序（防止固定位置作答）
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="setting-show-chart"> 
+                        允許測評者完成後查看詳細結果雷達圖
+                    </label>
+                </div>
+                
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                    <p><strong>系統狀態：</strong> 資料已同步至本地快取</p>
+                    <p><strong>目前總測評人數：</strong> <span id="stat-total-users">0</span> 人</p>
+                </div>
+                <button id="save-settings-btn" class="btn success-btn small" style="margin-top: 20px;">儲存設定</button>
+            </div>
+
+            <!-- 內容編輯 Tab -->
+            <div id="tab-content" class="tab-content">
+                <h3>首頁內容設定</h3>
+                
+                <div class="form-group">
+                    <label>首頁大標題：</label>
+                    <input type="text" id="edit-title">
+                </div>
+                
+                <div class="form-group">
+                    <label>施測提醒事項 (逐條，留空則不顯示)：</label>
+                    <input type="text" id="edit-inst-1" style="margin-bottom: 10px;">
+                    <input type="text" id="edit-inst-2" style="margin-bottom: 10px;">
+                    <input type="text" id="edit-inst-3">
+                </div>
+
+                <hr style="margin: 40px 0; border: 0; border-top: 1px solid var(--border-color);">
+                
+                <h3>題目管理編輯 (Questions Editor)</h3>
+                <p style="color:var(--text-muted); margin-bottom: 20px;">您可以在此修改所有 15 道題目、選項文字以及各選項對應的風格 (D/I/S/C)。</p>
+                
+                <div id="questions-editor-container">
+                    <!-- JS 動態載入 15 題編輯區 -->
+                </div>
+
+                <button id="save-content-btn" class="btn success-btn">儲存所有內容與題目</button>
+            </div>
+
+            <div id="tab-results" class="tab-content">
+                <div class="admin-actions">
+                    <button id="export-btn" class="btn success-btn small">匯出 CSV</button>
+                    <button id="clear-btn" class="btn danger-btn small">清除所有資料</button>
+                </div>
+                
+                <!-- 總體平均分數長條圖 -->
+                <div id="chart-container" style="width: 100%; max-width: 600px; margin: 20px auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: none;">
+                    <canvas id="averageScoresChart"></canvas>
+                </div>
+                
+                <div class="table-responsive">
+                    <table id="responses-table">
+                        <thead>
+                            <tr>
+                                <th>時間</th>
+                                <th>姓名</th>
+                                <th>D 分數</th>
+                                <th>i 分數</th>
+                                <th>S 分數</th>
+                                <th>C 分數</th>
+                                <th>判定結果</th>
+                                <th style="text-align: center;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="responses-body">
+                            <!-- 資料將由 JS 填入 -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="empty-state" class="empty-state" style="display: none;">
+                    目前尚無測評資料。
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
